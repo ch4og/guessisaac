@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --grid-size: {{grid_side}}; /* Define the CSS variable */
+        }
+        .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 75vh;
+        }
+        .grid-container {
+
+            display: grid;
+            grid-template-rows: repeat(var(--grid-size), 1fr);
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            grid-gap: 10px;
+            text-align: center;
+            grid-auto-flow: dense;
+            position: absolute;
+        }
+        .grid-item {
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            font-size: 20px;
+            width: 100px;
+            height: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background-color: rgba(255, 255, 255, 0.25);
+            transition: background-color 0.5s ease;
+            transition: border 0.5s ease
+        }
+        .grid-image {
+            width: 100px;
+            height: 100px;
+            opacity: 1;
+            transition: opacity 1s ease;
+        }
+        .grid-item {
+            position: relative;
+        }
+
+        .grid-item.grayscale .grid-image {
+            filter: grayscale(100%);
+            opacity: 0.1;
+            transition: opacity 0.5s ease;
+        }
+        .grid-item.grayscale{
+            background-color: rgba(0, 0, 0, 0.25); 
+            border: 3px solid rgba(0, 0, 0, 0.8);
+            transition: background-color 1s ease;
+            transition: border 1s ease;
+        } 
+
+
+        body{
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover; 
+        background-size: cover;
+            color: white;
+            background-color: #383838;
+        
+        }
+        #info-block {
+            display: none;
+            position: absolute;
+            background-color: #000;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        #info-description{
+            white-space: pre-line;
+        }
+        
+    </style>
+    <title>GuessIsaac</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1><a href="/">🏠</a><text id="heading">GuessIsaac</text></h1> 
+    <h3>{{rf}}</h3>
+    <button onclick="copyCode()">Copy Code</button> <input id="codebox" type="text" value="{{code}}" class="field left" readonly style="display: none;">
+    <div id="info-block" style="display: none;">
+        <h2 id="info-title"></h2>
+        <p id="info-description"></p>
+    </div>
+<div class="container">
+<div class="grid-container">
+  {% for i in range(grid_size) %}
+  <div class="grid-item">
+      <img class="grid-image" data-index="{{ item_name[i] }}" src="{{ item_thumb[i] }} ">
+  </div>
+  {% endfor %}
+</div>
+</div>
+<script>
+    let shiftKeyHeld = false;
+    const gridItems = document.querySelectorAll('.grid-item');
+
+    gridItems.forEach(item => {
+        item.addEventListener('click', () => {
+            item.classList.toggle('grayscale');
+        });
+    });
+    function copyCode() {
+        var textbox = document.getElementById("codebox");
+        textbox.style.display = "block";
+        textbox.select();
+        document.execCommand("copy");
+        textbox.style.display = "none";
+        }
+
+    var descriptionList = [];
+
+    function showInfoBlock(event, index) {
+        var infoBlock = document.getElementById('info-block');
+        var infoTitle = document.getElementById('info-title');
+        var infoDescription = document.getElementById('info-description');
+
+        infoTitle.textContent = namesList[index];
+        var text = descriptionList[index];
+        infoDescription.textContent = text;
+        
+
+        infoBlock.style.top = event.clientY + 'px';
+        infoBlock.style.left = event.clientX + 'px';
+        infoBlock.style.display = 'block';
+    }
+    function hideInfoBlock() {
+            var infoBlock = document.getElementById('info-block');
+            infoBlock.style.display = 'none';
+        }
+        function togInfoBlock() {
+            var infoBlock = document.getElementById('info-block');
+            infoBlock.style.display = 'block';
+        }
+    $(document).ready(function() {
+        $.get('/get_description_list', function(data) {
+            descriptionList = data.description_list;
+            namesList = data.names_list;
+        var images = document.querySelectorAll('.grid-item');
+        images.forEach(function(image, index) {
+            image.addEventListener('contextmenu', function(event) {
+                event.preventDefault();
+                showInfoBlock(event, index);
+            });
+            image.addEventListener('mouseleave', hideInfoBlock);
+        });  
+        var infoBlock = document.getElementById('info-block');
+        infoBlock.addEventListener('mouseleave', hideInfoBlock);
+        infoBlock.addEventListener('mouseover', togInfoBlock);
+        });
+    });
+</script>
+</body>
+</html>

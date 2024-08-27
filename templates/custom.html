@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"
+    />
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <style>
+      :root {
+          --grid-size: {{grid_side}}; /* Define the CSS variable */
+      }
+      .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 75vh;
+      }
+      .grid-container {
+          display: grid;
+          grid-template-rows: repeat(var(--grid-size), 1fr);
+          grid-template-columns: repeat(var(--grid-size), 1fr);
+          grid-gap: 10px;
+          text-align: center;
+          grid-auto-flow: dense;
+          position: absolute;
+          z-index: 1; /* Add a z-index to ensure the menu floats above the grid items */
+      }
+
+      .menu {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 2; /* Add a higher z-index to ensure the menu is on top of other elements */
+      }
+      .grid-item {
+          border: 3px solid rgba(255, 255, 255, 0.8);
+          padding: 20px;
+          font-size: 20px;
+          width: 100px;
+          height: 100px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          background-color: rgba(255, 255, 255, 0.25);
+      }
+      .grid-image {
+          width: 100px;
+          height: 100px;
+      }
+      /* .iframe-container {
+          float: right;
+          width: 800px;
+          height: 600px;
+      } */
+      .grid-item {
+          position: relative;
+      }
+
+      .grid-item.grayscale .grid-image {
+          filter: grayscale(100%);
+      }
+
+      .edit-icon {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100px;
+          height: 100px;
+          background-image: url('/static/edit.png');
+          background-repeat: no-repeat;
+          background-size: contain;
+          display: none;
+      }
+      body{
+          color: white;
+          background-color: #383838;
+          -webkit-background-size: cover;
+      -moz-background-size: cover;
+      -o-background-size: cover;
+      background-size: cover;
+      }
+      .modal {
+          display: none;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-content {
+          background-color: #000;
+          margin: 15% auto;
+          padding: 20px;
+          border: 1px solid #888;
+          width: 25%;
+      }
+
+      .close {
+          color: #aaa;
+          float: right;
+          font-size: 28px;
+          font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+          color: black;
+          text-decoration: none;
+          cursor: pointer;
+      }
+      .info-icon {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          background-color: blue;
+          color: white;
+          text-align: center;
+          border-radius: 50%;
+          cursor: pointer;
+      }
+      #modee {
+          display: inline-block;
+      }
+    </style>
+    <title>GuessIsaac</title>
+  </head>
+  <body>
+    <h1><a href="/">🏠</a>GuessIsaac</h1>
+    <h3>
+      CUSTOMIZE
+      <div id="modee">{{grid_side}}x{{grid_side}}</div>
+      <div class="info-icon" onclick="openModal(1)">i</div>
+    </h3>
+    <div id="donecustom"></div>
+
+    <div class="container">
+      <div class="grid-container">
+        {% for i in range(grid_size) %}
+        <div class="grid-item">
+          <img
+            class="grid-image"
+            title="{{ item_name[i] }}"
+            src="{{ item_thumb[i] }}"
+          />
+          <div class="edit-icon"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div id="modal1" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal(1)">&times;</span>
+        <br />
+        To edit item in grid click on it.<br />
+        Textbox with button will apear on left side.<br />
+        You should enter name of item in textbox and click on button.<br />
+        Name should be in correct case and with symbols.<br />
+        List of all names is available
+        <a href="/list" target="_blank" style="color: white">here</a><br />
+        (it will open in a new tab)
+      </div>
+    </div>
+    <script>
+      const gridItems = document.querySelectorAll(".grid-item");
+      let isEditing = false;
+      gridItems.forEach((item) => {
+        const gridImage = item.querySelector(".grid-image");
+        const editIcon = item.querySelector(".edit-icon");
+        gridImage.addEventListener("click", (event) => {
+          if (!isEditing) {
+            event.stopPropagation(); // Prevent the click event from bubbling up to the grid item
+
+            const editIcon = item.querySelector(".edit-icon");
+            const itemName = gridImage.getAttribute("title");
+            const itemSrc = gridImage.getAttribute("src");
+
+            // Create a new textbox and submit button
+            const form = document.createElement("form");
+            const textbox = document.createElement("input");
+            const submitButton = document.createElement("button");
+
+            // Set the type and placeholder for the textbox
+            textbox.type = "text";
+            textbox.id = "tags";
+            textbox.placeholder = "Change item";
+            // Set the text for the submit button
+            submitButton.textContent = "Submit";
+
+            // Add the event listener to the submit button
+            submitButton.addEventListener("click", (event) => {
+              event.preventDefault(); // Prevent the form from submitting
+
+              // Get the new name from the textbox
+              const newName = textbox.value;
+
+              // Hide the editIcon
+              editIcon.style.display = "none";
+
+              // Send a jQuery request to edit the image and title
+              $.ajax({
+                url: "/edit",
+                method: "POST",
+                data: {
+                  itemName: itemName,
+                  itemSrc: itemSrc,
+                  newName: newName,
+                },
+                success: function (response) {
+                  // Handle the response from Flask
+                  console.log(response.message);
+
+                  // Update the image and title
+                  const gridImage = document.querySelector(
+                    '.grid-image[title="' + itemName + '"]'
+                  );
+                  if (gridImage) {
+                    gridImage.src = response.newUrl;
+                    gridImage.title = response.newName;
+                  }
+                },
+                error: function (xhr, status, error) {
+                  // Handle any errors
+                  console.error(error);
+                },
+              });
+
+              // Close the form
+              form.remove();
+              isEditing = false;
+            });
+
+            // Append the textbox and submit button to the form
+            form.appendChild(textbox);
+            form.appendChild(submitButton);
+
+            // Add CSS styles to the form
+            form.style.position = "fixed";
+            form.style.top = "50%";
+            form.style.left = "20px";
+            form.style.transform = "translateY(-50%)";
+            form.style.zIndex = "9999";
+
+            // Append the form to the document body
+            document.body.appendChild(form);
+
+            // Show the red cross
+            editIcon.style.display = "block";
+            isEditing = true;
+
+            initializeAutocomplete();
+          }
+        });
+      });
+      const donecustomDiv = document.getElementById("donecustom");
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/donecustom";
+
+      // Create a submit button
+      const submitButton = document.createElement("button");
+      submitButton.textContent = "DONE";
+
+      // Add an event listener to the submit button
+      submitButton.addEventListener("click", () => {
+        // Get the value of the <div> element with the id "modee"
+        const modeeValue = document.getElementById("modee").textContent;
+
+        // Get all the .grid-image elements
+        const gridImages = document.querySelectorAll(".grid-image");
+
+        // Extract the title values of the .grid-image elements
+        const titleValues = Array.from(gridImages).map((gridImage) =>
+          gridImage.getAttribute("title")
+        );
+
+        // Prepend the modeeValue to the titleValues array
+        titleValues.unshift(modeeValue);
+
+        // Set the value of a hidden input field in the form
+        const titleValuesInput = document.createElement("input");
+        titleValuesInput.type = "hidden";
+        titleValuesInput.name = "titleValues";
+        titleValuesInput.value = JSON.stringify(titleValues);
+        form.appendChild(titleValuesInput);
+
+        // Submit the form
+        form.submit();
+      });
+
+      // Append the submit button to the form
+      // form.appendChild(submitButton);
+
+      // Append the form to the document body
+      // document.body.appendChild(form);
+      form.appendChild(submitButton);
+      donecustomDiv.appendChild(form);
+      function openModal(modalId) {
+        document.getElementById("modal" + modalId).style.display = "block";
+      }
+
+      function closeModal(modalId) {
+        document.getElementById("modal" + modalId).style.display = "none";
+      }
+
+      window.onclick = function (event) {
+        if (event.target.classList.contains("modal")) {
+          closeModal(event.target.id.replace("modal", ""));
+        }
+      };
+
+      function initializeAutocomplete() {
+        var availableTags = [
+          "The Sad Onion",
+          "The Inner Eye",
+          "Spoon Bender",
+          "Cricket's Head",
+          "My Reflection",
+          "Number One",
+          "Blood of the Martyr",
+          "Brother Bobby",
+          "Skatole",
+          "Halo of Flies",
+          "1UP",
+          "Magic Mushroom",
+          "The Virus",
+          "Roid Rage",
+          "<3",
+          "Raw Liver",
+          "Skeleton Key",
+          "A Dollar",
+          "Boom!",
+          "Transcendence",
+          "The Compass",
+          "Lunch",
+          "Dinner",
+          "Dessert",
+          "Breakfast",
+          "Rotten Meat",
+          "Wooden Spoon",
+          "The Belt",
+          "Mom's Underwear",
+          "Mom's Heels",
+          "Mom's Lipstick",
+          "Wire Coat Hanger",
+          "The Bible",
+          "The Book of Belial",
+          "The Necronomicon",
+          "The Poop",
+          "Mr. Boom",
+          "Tammy's Head",
+          "Mom's Bra",
+          "Kamikaze",
+          "Mom's Pad",
+          "Bob's Rotten Head",
+          "Teleport",
+          "Yum Heart",
+          "Lucky Foot",
+          "Doctor's Remote",
+          "Cupid's Arrow",
+          "Shoop Da Whoop!",
+          "Steven",
+          "Pentagram",
+          "Dr. Fetus",
+          "Magneto",
+          "Treasure Map",
+          "Mom's Eye",
+          "Lemon Mishap",
+          "Distant Admiration",
+          "Book of Shadows",
+          "The Ladder",
+          "Charm of the Vampire",
+          "The Battery",
+          "Steam Sale",
+          "Anarchist Cookbook",
+          "The Hourglass",
+          "Sister Maggy",
+          "Technology",
+          "Chocolate Milk",
+          "Growth Hormones",
+          "Mini Mush",
+          "Rosary",
+          "Cube of Meat",
+          "A Quarter",
+          "PhD",
+          "X-Ray Vision",
+          "My Little Unicorn",
+          "Book of Revelations",
+          "The Mark",
+          "The Pact",
+          "Dead Cat",
+          "Lord of the Pit",
+          "The Nail",
+          "We Need To Go Deeper",
+          "Deck of Cards",
+          "Monstro's Tooth",
+          "Loki's Horns",
+          "Little Chubby",
+          "Spider Bite",
+          "The Small Rock",
+          "Spelunker Hat",
+          "Super Bandage",
+          "The Gamekid",
+          "Sack of Pennies",
+          "Robo-Baby",
+          "Little C.H.A.D",
+          "The Book of Sin",
+          "The Relic",
+          "Little Gish",
+          "Little Steven",
+          "The Halo",
+          "Mom's Bottle of Pills",
+          "The Common Cold",
+          "The Parasite",
+          "The D6",
+          "Mr. Mega",
+          "Pinking Shears",
+          "The Wafer",
+          "Money = Power",
+          "Mom's Contacts",
+          "The Bean",
+          "Guardian Angel",
+          "Demon Baby",
+          "Mom's Knife",
+          "Ouija Board",
+          "9 Volt",
+          "Dead Bird",
+          "Brimstone",
+          "Blood Bag",
+          "Odd Mushroom (Thin)",
+          "Odd Mushroom (Large)",
+          "Whore of Babylon",
+          "Monster Manual",
+          "Dead Sea Scrolls",
+          "Bobby-Bomb",
+          "Razor Blade",
+          "Forget Me Now",
+          "Forever Alone",
+          "Bucket of Lard",
+          "A Pony",
+          "Bomb Bag",
+          "A Lump of Coal",
+          "Guppy's Paw",
+          "Guppy's Tail",
+          "IV Bag",
+          "Best Friend",
+          "Remote Detonator",
+          "Stigmata",
+          "Mom's Purse",
+          "Bob's Curse",
+          "Pageant Boy",
+          "Scapular",
+          "Speed Ball",
+          "Bum Friend",
+          "Guppy's Head",
+          "Prayer Card",
+          "Notched Axe",
+          "Infestation",
+          "Ipecac",
+          "Tough Love",
+          "The Mulligan",
+          "Technology 2",
+          "Mutant Spider",
+          "Chemical Peel",
+          "The Peeper",
+          "Habit",
+          "Bloody Lust",
+          "Crystal Ball",
+          "Spirit of the Night",
+          "Crack The Sky",
+          "Ankh",
+          "Celtic Cross",
+          "Ghost Baby",
+          "The Candle",
+          "Cat-O-Nine-Tails",
+          "D20",
+          "Harlequin Baby",
+          "Epic Fetus",
+          "Polyphemus",
+          "Daddy Longlegs",
+          "Spider Butt",
+          "Sacrificial Dagger",
+          "Mitre",
+          "Rainbow Baby",
+          "Dad's Key",
+          "Stem Cells",
+          "Portable Slot",
+          "Holy Water",
+          "Fate",
+          "The Black Bean",
+          "White Pony",
+          "Sacred Heart",
+          "Toothpicks",
+          "Holy Grail",
+          "Dead Dove",
+          "Blood Rights",
+          "Guppy's Hairball",
+          "Abel",
+          "SMB Super Fan",
+          "Pyro",
+          "3 Dollar Bill",
+          "Telepathy for Dummies",
+          "MEAT!",
+          "Magic 8 Ball",
+          "Mom's Coin Purse",
+          "Squeezy",
+          "Jesus Juice",
+          "Box",
+          "Mom's Key",
+          "Mom's Eyeshadow",
+          "Iron Bar",
+          "Midas Touch",
+          "Humbleing Bundle",
+          "Fanny pack",
+          "Sharp Plug",
+          "The Guillotine",
+          "Ball of Bandages",
+          "Champion Belt",
+          "Butt Bombs",
+          "Gnawed Leaf",
+          "Spiderbaby",
+          "Guppy's Collar",
+          "Lost Contact",
+          "Anemic",
+          "Goat Head",
+          "Ceremonial Robes",
+          "Mom's Wig",
+          "Placenta",
+          "Old Bandage",
+          "Sad Bombs",
+          "Rubber Cement",
+          "Anti-Gravity",
+          "Pyromaniac",
+          "Cricket's Body",
+          "Gimpy",
+          "Black Lotus",
+          "Piggy Bank",
+          "Mom's Perfume",
+          "Monstro's Lung",
+          "Abaddon",
+          "Ball of Tar",
+          "Stop Watch",
+          "Tiny Planet",
+          "Infestation 2",
+          "E. Coli",
+          "Death's Touch",
+          "Key Piece #1",
+          "Key Piece #2",
+          "Experimental Treatment",
+          "Contract From Below",
+          "Infamy",
+          "Trinity Shield",
+          "Tech.5",
+          "20/20",
+          "Blue Map",
+          "BFFS!",
+          "Hive Mind",
+          "There's Options",
+          "Bogo Bombs",
+          "Starter Deck",
+          "Little Baggy",
+          "Magic Scab",
+          "Blood Clot",
+          "Screw",
+          "Hot Bombs",
+          "Fire Mind",
+          "Missing No",
+          "Dark Matter",
+          "Black Candle",
+          "Proptosis",
+          "Missing Page 2",
+          "Smart Fly",
+          "Dry Baby",
+          "Juicy Sack",
+          "Robo-Baby 2.0",
+          "Rotten Baby",
+          "Headless Baby",
+          "Leech",
+          "Mystery Sack",
+          "BBF",
+          "Bob's Brain",
+          "Best Bud",
+          "Lil Brimstone",
+          "Isaac's Heart",
+          "Lil Haunt",
+          "Dark Bum",
+          "Big Fan",
+          "Sissy Long Legs",
+          "Punching Bag",
+          "How To Jump",
+          "D100",
+          "D4",
+          "D10",
+          "Blank Card",
+          "Book of Secrets",
+          "Box of Spiders",
+          "Red Candle",
+          "The Jar",
+          "FLUSH!",
+          "Satanic Bible",
+          "Head of Krampus",
+          "Butter Bean",
+          "Magic Fingers",
+          "Converter",
+          "Pandora's Box",
+          "Unicorn Stump",
+          "Taurus",
+          "Aries",
+          "Cancer",
+          "Leo",
+          "Virgo",
+          "Libra",
+          "Scorpio",
+          "Sagittarius",
+          "Capricorn",
+          "Aquarius",
+          "Pisces",
+          "Eve's Mascara",
+          "Judas' Shadow",
+          "Maggy's Bow",
+          "Holy Mantle",
+          "Thunder Thighs",
+          "Strange Attractor",
+          "Cursed Eye",
+          "Mysterious Liquid",
+          "Gemini",
+          "Cain's Other Eye",
+          "???'s Only Friend",
+          "Samson's Chains",
+          "Mongo Baby",
+          "Isaac's Tears",
+          "Undefined",
+          "Scissors",
+          "Breath of Life",
+          "The Polaroid",
+          "The Negative",
+          "The Ludovico Technique",
+          "Soy Milk",
+          "Godhead",
+          "Lazarus' Rags",
+          "The Mind",
+          "The Body",
+          "The Soul",
+          "Dead Onion",
+          "Broken Watch",
+          "Boomerang",
+          "Safety Pin",
+          "Caffeine Pill",
+          "Torn Photo",
+          "Blue Cap",
+          "Latch Key",
+          "Match Book",
+          "Synthoil",
+          "A Snack",
+          "Diplopia",
+          "Placebo",
+          "Wooden Nickel",
+          "Toxic Shock",
+          "Mega Bean",
+          "Glass Cannon",
+          "Bomber Boy",
+          "Crack Jacks",
+          "Mom's Pearls",
+          "Car Battery",
+          "Box of Friends",
+          "The Wiz",
+          "8 Inch Nails",
+          "Incubus",
+          "Fate's Reward",
+          "Lil Chest",
+          "Sworn Protector",
+          "Friend Zone",
+          "Lost Fly",
+          "Scatter Bombs",
+          "Sticky Bombs",
+          "Epiphora",
+          "Continuum",
+          "Mr. Dolly",
+          "Curse of The Tower",
+          "Charged Baby",
+          "Dead Eye",
+          "Holy Light!",
+          "Host Hat",
+          "Restock",
+          "Bursting Sack",
+          "No. 2",
+          "Pupula Duplex",
+          "Pay To Play",
+          "Eden's Blessing",
+          "Friendly Ball",
+          "Tear Detonator",
+          "Lil Gurdy",
+          "Bumbo",
+          "D12",
+          "Censer",
+          "Key Bum",
+          "Rune Bag",
+          "Seraphim",
+          "Betrayal",
+          "Zodiac",
+          "Serpent's Kiss",
+          "Marked",
+          "Tech X",
+          "Ventricle Razor",
+          "Tractor Beam",
+          "God's Flesh",
+          "Maw of The Void",
+          "Spear of Destiny",
+          "Explosivo",
+          "Chaos",
+          "Spider Mod",
+          "Farting Baby",
+          "GB Bug",
+          "D8",
+          "Purity",
+          "Athame",
+          "Empty Vessel",
+          "Evil Eye",
+          "Lusty Blood",
+          "Cambion Conception",
+          "Immaculate Conception",
+          "More Options",
+          "Crown of Light",
+          "Deep Pockets",
+          "Succubus",
+          "Fruit Cake",
+          "Teleport 2.0",
+          "Black Powder",
+          "Kidney Bean",
+          "Glowing Hour Glass",
+          "Circle of Protection",
+          "Sack Head",
+          "Night Light",
+          "Obsessed Fan",
+          "Mine Crafter",
+          "PJs",
+          "Head of the Keeper",
+          "Papa Fly",
+          "Multidimensional Baby",
+          "Glitter Bombs",
+          "My Shadow",
+          "Jar of Flies",
+          "Lil Loki",
+          "Milk!",
+          "D7",
+          "Binky",
+          "Mom's Box",
+          "Kidney Stone",
+          "Mega Blast",
+          "Dark Prince's Crown",
+          "Apple!",
+          "Lead Pencil",
+          "Dog Tooth",
+          "Dead Tooth",
+          "Linger Bean",
+          "Shard of Glass",
+          "Metal Plate",
+          "Eye of Greed",
+          "Tarot Cloth",
+          "Varicose Veins",
+          "Compound Fracture",
+          "Polydactyly",
+          "Dad's Lost Coin",
+          "Midnight Snack",
+          "Cone Head",
+          "Belly Button",
+          "Sinus Infection",
+          "Glaucoma",
+          "Parasitoid",
+          "Eye of Belial",
+          "Sulfuric Acid",
+          "Glyph of Balance",
+          "Analog Stick",
+          "Contagion",
+          "Finger!",
+          "Shade",
+          "Depression",
+          "Hushy",
+          "Lil Monstro",
+          "King Baby",
+          "Big Chubby",
+          "Plan C",
+          "D1",
+          "Void",
+          "Pause",
+          "Smelter",
+          "Compost",
+          "Dataminer",
+          "Clicker",
+          "MaMa Mega!",
+          "Wait What?",
+          "Crooked Penny",
+          "Dull Razor",
+          "Potato Peeler",
+          "Metronome",
+          "D Infinity",
+          "Eden's Soul",
+          "Acid Baby",
+          "YO LISTEN!",
+          "Adrenaline",
+          "Jacob's Ladder",
+          "Ghost Pepper",
+          "Euthanasia",
+          "Camo Undies",
+          "Duality",
+          "Eucharist",
+          "Sack of Sacks",
+          "Greed's Gullet",
+          "Large Zit",
+          "Little Horn",
+          "Brown Nugget",
+          "Poke Go",
+          "BackStabber",
+          "Sharp Straw",
+          "Mom's Razor",
+          "Bloodshot Eye",
+          "Delirious",
+          "Angry Fly",
+          "Black Hole",
+          "Bozo",
+          "Broken Modem",
+          "Mystery Gift",
+          "Sprinkler",
+          "Fast Bombs",
+          "Buddy in a Box",
+          "Lil Delirium",
+          "Jumper Cables",
+          "Coupon",
+          "Telekinesis",
+          "Moving Box",
+          "Technology Zero",
+          "Leprosy",
+          "7 Seals",
+          "Mr. ME!",
+          "Angelic Prism",
+          "Pop!",
+          "Death's List",
+          "Haemolacria",
+          "Lachryphagy",
+          "Trisagion",
+          "Schoolbag",
+          "Blanket",
+          "Sacrificial Altar",
+          "Lil Spewer",
+          "Marbles",
+          "Mystery Egg",
+          "Flat Stone",
+          "Marrow",
+          "Slipped Rib",
+          "Hallowed Ground",
+          "Pointy Rib",
+          "Book of the Dead",
+          "Dad's Ring",
+          "Divorce Papers",
+          "Jaw Bone",
+          "Brittle Bones",
+          "Broken Shovel 1",
+          "Broken Shovel 2",
+          "Mom's Shovel",
+          "Clear Rune",
+          "Mucormycosis",
+          "2Spooky",
+          "Golden Razor",
+          "Sulfur",
+          "Fortune Cookie",
+          "Eye Sore",
+          "120 Volt",
+          "It Hurts",
+          "Almond Milk",
+          "Rock Bottom",
+          "Nancy Bombs",
+          "A Bar of Soap",
+          "Blood Puppy",
+          "Dream Catcher",
+          "Paschal Candle",
+          "Divine Intervention",
+          "Blood Oath",
+          "Playdough Cookie",
+          "Orphan Socks",
+          "Eye of the Occult",
+          "Immaculate Heart",
+          "Monstrance",
+          "The Intruder",
+          "Dirty Mind",
+          "Damocles",
+          "Free Lemonade",
+          "Spirit Sword",
+          "Red Key",
+          "Psy Fly",
+          "Wavy Cap",
+          "Rocket in a Jar",
+          "Book of Virtues",
+          "Alabaster Box",
+          "The Stairway",
+          "Sol",
+          "Luna",
+          "Mercurius",
+          "Venus",
+          "Terra",
+          "Mars",
+          "Jupiter",
+          "Saturnus",
+          "Uranus",
+          "Neptunus",
+          "Pluto",
+          "Voodoo Head",
+          "Eye Drops",
+          "Act of Contrition",
+          "Member Card",
+          "Battery Pack",
+          "Mom's Bracelet",
+          "The Scooper",
+          "Ocular Rift",
+          "Boiled Baby",
+          "Freezer Baby",
+          "Eternal D6",
+          "Bird Cage",
+          "Larynx",
+          "Lost Soul",
+          "Blood Bombs",
+          "Lil Dumpy",
+          "Bird's Eye",
+          "Lodestone",
+          "Rotten Tomato",
+          "Birthright",
+          "Red Stew",
+          "Genesis",
+          "Sharp Key",
+          "Booster Pack",
+          "Mega Mush",
+          "Knife Piece 1",
+          "Knife Piece 2",
+          "Death Certificate",
+          "Bot Fly",
+          "Meat Cleaver",
+          "Evil Charm",
+          "Dogma",
+          "Purgatory",
+          "Stitches",
+          "R Key",
+          "Knockout Drops",
+          "Eraser",
+          "Yuck Heart",
+          "Urn of Souls",
+          "Akeldama",
+          "Magic Skin",
+          "Revelation",
+          "Consolation Prize",
+          "Tinytoma",
+          "Brimstone Bombs",
+          "4.5 Volt",
+          "Fruity Plum",
+          "Plum Flute",
+          "Star of Bethlehem",
+          "Cube Baby",
+          "Vade Retro",
+          "False PHD",
+          "Spin to Win",
+          "Vasculitis",
+          "Giant Cell",
+          "Tropicamide",
+          "Card Reading",
+          "Quints",
+          "Tooth and Nail",
+          "Binge Eater",
+          "Guppy's Eye",
+          "Strawman",
+          "Dad's Note",
+          "Sausage",
+          "Options?",
+          "Candy Heart",
+          "A Pound of Flesh",
+          "Redemption",
+          "Spirit Shackles",
+          "Cracked Orb",
+          "Empty Heart",
+          "Astral Projection",
+          "C Section",
+          "Lil Abaddon",
+          "Montezuma's Revenge",
+          "Lil Portal",
+          "Worm Friend",
+          "Bone Spurs",
+          "Hungry Soul",
+          "Jar of Wisps",
+          "Soul Locket",
+          "Friend Finder",
+          "Inner Child",
+          "Glitched Crown",
+          "Belly Jelly",
+          "Sacred Orb",
+          "Sanguine Bond",
+          "The Swarm",
+          "Heartbreak",
+          "Bloody Gust",
+          "Salvation",
+          "Vanishing Twin",
+          "Twisted Pair",
+          "Azazel's Rage",
+          "Echo Chamber",
+          "Isaac's Tomb",
+          "Vengeful Spirit",
+          "Esau Jr",
+          "Berserk!",
+          "Dark Arts",
+          "Abyss",
+          "Supper",
+          "Stapler",
+          "Suplex!",
+          "Bag of Crafting",
+          "Flip",
+          "Lemegeton",
+          "Sumptorium",
+          "Recall",
+          "Hold",
+          "Keeper's Sack",
+          "Keeper's Kin",
+          "Keeper's Box",
+          "Everything Jar",
+          "TMTRAINER",
+          "Anima Sola",
+          "Spindown Dice",
+          "Hypercoagulation",
+          "IBS",
+          "Hemoptysis",
+          "Ghost Bombs",
+          "Gello",
+          "Decap Attack",
+          "Glass Eye",
+          "Stye",
+          "Mom's Ring",
+        ];
+        $("#tags").autocomplete({
+          source: availableTags,
+        });
+      }
+    </script>
+  </body>
+</html>

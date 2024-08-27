@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+        // Define the options for the second dropdown
+        var options = {
+            'colors': ['Yellow', 'Gray', 'Red', 'Black', 'Pink', 'Brown', 'Blue', 'White'],
+            'release': ['Repentance', 'Afterbirth+', 'Rebirth', 'Flash', 'Afterbirth'],
+            'quality': ['0', '1', '2', '3', '4'],
+            'type': ['Active', 'Passive'],
+            'pool': ['Secret Room', 'Angel Room', 'Red Chest', 'Curse Room', 'Golden Chest', 'Baby Shop', 'Item Room', 'Boss Room', 'Crane Game', 'Shop', 'Devil Room', 'UltraSecretRoom', 'Wooden Chest']
+        };
+
+        // Handle the change event of the first dropdown
+        $('#rules').change(function() {
+            var selectedOption = $(this).val();
+
+            // Clear the options of the second dropdown
+            $('#options').empty();
+
+            // Check if the selected option has corresponding options
+            if (options[selectedOption]) {
+                // Create options for the second dropdown
+                options[selectedOption].forEach(function(option) {
+                    var newOption = $('<option></option>').val(option).text(option);
+                    $('#options').append(newOption);
+                });
+            }
+        });
+    });
+    function openModal(modalId) {
+            document.getElementById("modal" + modalId).style.display = "block";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById("modal" + modalId).style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains("modal")) {
+                closeModal(event.target.id.replace("modal", ""));
+            }
+        }
+</script>
+<style>
+  body{
+    background: url('static/wall.jpg') no-repeat center center fixed; 
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+    color: white;
+    background-color: black;
+    background-size: cover;
+  }
+  .info-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: blue;
+            color: white;
+            text-align: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #000;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 25%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+</style>
+  <title>GuessIsaac</title>
+</head>
+<body>
+  <h1 id="heading">GuessIsaac</h1>
+  
+  <form action="/rand" method="POST">
+    <h3>Random:</h3>
+    <select name="gridsizesel">
+      <option value="4">4x4</option>
+      <option value="5">5x5</option>
+      <option value="6" selected="selected">6x6</option>
+      <option value="7">7x7</option>
+      <option value="8">8x8</option>
+    </select>
+    <select name="rulessel">
+      <option value=" " selected="selected"> </option>
+      <option value="colors">random color</option>
+      <option value="release">random first release</option>
+      <option value="quality">random quality</option>
+      <option value="type">random type</option>
+      <option value="pool">random pool</option>
+      <option value="rnd">fully random items</option>
+    </select>
+    <button type="submit">Random</button>
+  </form>
+  <br>
+  <form action="/mode" method="POST">
+    <h3>Mode: <div class="info-icon" onclick="openModal(1)">i</div></h3>
+    <select name="gridsizesel">
+      <option value="4">4x4</option>
+      <option value="5">5x5</option>
+      <option value="6" selected="selected">6x6</option>
+      <option value="7">7x7</option>
+      <option value="8">8x8</option>
+    </select>
+    <select name="rulessel" id="rules">
+      <option value=" " selected="selected"> </option>
+      <option value="colors">color</option>
+      <option value="release">release</option>
+      <option value="quality">quality</option>
+      <option value="type">type</option>
+      <option value="pool">pool</option>
+    </select>
+    <select name="options" id="options">
+      <!-- Options for the second dropdown will be dynamically added here -->
+  </select>
+    <button type="submit">Mode</button>
+  </form>
+  <br>
+  <form action="/custom" method="POST">
+    <h3>Custom:</h3>
+    <select name="gridsizesel">
+      <option value="4">4x4</option>
+      <option value="5">5x5</option>
+      <option value="6" selected="selected">6x6</option>
+      <option value="7">7x7</option>
+      <option value="8">8x8</option>
+    </select>
+    <button type="submit">Custom</button>
+  </form>
+  <br>
+  <form action="/code" method="POST">
+    <h3>Code:</h3>
+    <input type="text" name="code" placeholder="Enter code"> <button type="code">Code</button>
+  </form>
+  <br>
+  <a href="/list" style="color:white;" target="_blank">List of all items</a>
+  <br>
+  <h1>{{help}}</h1>
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal(1)">&times;</span>
+        <br>
+        POOLS:<br>
+        Secret Room and Boss Room are unavalible on 8x8<br>
+        Curse Room and Golden Chest are only avalible on 4x4 and 5x5<br>
+        <br>
+        QUALITY:<br>
+        Quality 0 is unavalible on 8x8<br>
+        Quality 4 is unavalible on 8x8 and 7x7<br><br>
+    </div>
+  </div>
+
+    
+</div>
+</body>
+</html>

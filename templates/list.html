@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* Set the height of the container to full viewport height */
+        }
+        body{
+            color: white;
+            background-color: #383838;
+            -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover; 
+        background-size: cover;
+        }
+    </style>
+    <title>GuessIsaac</title>
+</head>
+<body>
+    <h1>GuessIsaac</h1> 
+
+    <div class="container">
+        <h3>List:</h3>
+        {% for i in range(itemlen) %}
+        <p><img src="{{ item_thumbs[i] }}" width="32px"> {{ item_names[i] }}</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
